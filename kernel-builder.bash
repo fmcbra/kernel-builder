@@ -204,7 +204,7 @@ function kernel_build()
     JOBS=$ncpu
   fi
 
-  time nice make -j$JOBS bindeb-pkg
+  time make -j$JOBS bindeb-pkg
   [[ $? -eq 0 ]] || die "make(1) bindeb-pkg failed"
 
   export BUILT_KV=$(strings vmlinux |grep '^Linux version ' |awk '{print $3}')
