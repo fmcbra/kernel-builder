@@ -204,6 +204,8 @@ function kernel_build()
     JOBS=$ncpu
   fi
 
+  export PATH="/usr/lib/ccache:$PATH"
+
   time make -j$JOBS bindeb-pkg
   [[ $? -eq 0 ]] || die "make(1) bindeb-pkg failed"
 
