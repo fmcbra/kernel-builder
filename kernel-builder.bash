@@ -298,6 +298,11 @@ function do_build()
   echo "Building kernel $KV"
   echo
 
+  echo ">> Installing build dependencies"
+  wrap apt-get install -y \
+    bc bison build-essential ccache dpkg-dev fakeroot flex gnupg2 ncurses-dev \
+    lib{ssl,elf}-dev pkg-config zlib1g-dev xz-utils
+
   echo ">> Extracting tarball"
   tarball_download
   tarball_extract
