@@ -291,7 +291,7 @@ function do_build()
   local path=
   for path in "$LOG_DIR" "$DISTFILE_DIR" "$DEB_DIR"
   do
-    [[ -d $path ]] || wrap mkdir -m 0750 "$path"
+    [[ -d $path ]] || wrap mkdir -p -m 0750 "$path"
   done
 
   echo
