@@ -144,6 +144,10 @@ function tarball_download()
   echo ">> Extracting $tz"
   wrap unxz -d -k "$tz"
 
+  # TODO: remove this hack and make keys which are to be imported part of the
+  # configuration in the new UI
+  wrap gpg2 --keyserver hkp://pgp.mit.edu --recv-keys 647F28654894E3BD457199BE38DBBDC86092693E
+
   echo ">> Verifying gpg2 signature of file $tb"
   wrap gpg2 --verify "$ts" "$tb"
 
