@@ -300,7 +300,7 @@ function do_build()
 
   echo ">> Installing build dependencies"
   wrap apt-get install -y \
-    bc bison build-essential ccache dpkg-dev fakeroot flex gnupg2 ncurses-dev \
+    bc bison build-essential ccache dirmngr dpkg-dev fakeroot flex gnupg2 ncurses-dev \
     lib{ssl,elf}-dev pkg-config zlib1g-dev xz-utils
 
   echo ">> Extracting tarball"
