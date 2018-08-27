@@ -16,6 +16,12 @@ LOG_DIR="${LOG_DIR:-/var/log/kernel-builder}"
 DISTFILE_DIR="${DISTFILE_DIR:-/var/tmp/distfiles}"
 DEB_DIR="${DEB_DIR:-/var/lib/kernel-builder/debs}"
 
+# Ensure $TMPDIR exists
+if ! [[ -d $TMPDIR ]]
+then
+  mkdir -p "$TMPDIR" || exit 1
+fi
+
 # Work directory rooted in $TMPDIR
 WORK_DIR="$(mktemp -d -p "$TMPDIR" "$SCRIPT_NAME.XXXXXXXX")"
 [[ $? -eq 0 ]] || exit 1
