@@ -326,6 +326,9 @@ function do_build()
   echo ">> Archiving .deb's for kernel $KV to $DEB_DIR"
   archive_debs
 
+  # If we don't change directory to somewhere other than the tmpfs, the umount will fail
+  cd "$TMPDIR"
+
   return 0
 }
 ## }}}
