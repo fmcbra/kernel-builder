@@ -3,6 +3,9 @@
 # Script filename
 SCRIPT_NAME="$(basename "$0")"
 
+# Set a restrictive umask that clears all permission bits for others
+umask 0007
+
 # Read in default configuration
 if [[ -f /etc/default/kernel-builder ]]
 then
@@ -144,7 +147,7 @@ function tarball_download()
   echo ">> Extracting $tz"
   wrap unxz -d -k "$tz"
 
-  # TODO: remove this hack and make keys which are to be imported part of the
+  # FIXME: remove this hack and make keys which are to be imported part of the
   # configuration in the new UI
   wrap gpg2 --keyserver hkp://pgp.mit.edu --recv-keys 647F28654894E3BD457199BE38DBBDC86092693E
 
@@ -189,8 +192,14 @@ function kernel_configure()
 {
   wrap cd "$WORK_DIR/build/linux/linux-$KV"
 
-  cp -L "$KCONFIG" .config
-  yes '' |make oldconfig >/dev/null 2>&1
+  wrap cp -L "$KCONFIG" .config
+  if [[ -z $CROSS_ARCH ]]
+  then
+    yes '' |make oldconfig >/dev/null 2>&1
+  else
+    yes '' |make ARCH=$CROSS_ARCH CROSS_COMPILE=${CROSS_TOOLCHAIN}- oldconfig >/dev/null 2>&1
+  fi
+
   [[ $? -eq 0 ]] || die "make(1) oldconfig failed"
 }
 ## }}}
@@ -208,14 +217,31 @@ function kernel_build()
     JOBS=$ncpu
   fi
 
+  # FIXME: expand this (and other?) code which related to ccache such that we (a) check ccache is
+  # available in PATH and (b) allow the user to specify an alternate location for the ccache
+  # binaries
   export PATH="/usr/lib/ccache:$PATH"
 
-  time make -j$JOBS bindeb-pkg
+  if [[ -z $CROSS_ARCH ]]
+  then
+    time make -j$JOBS bindeb-pkg
+  else
+    time make -j$JOBS ARCH=$CROSS_ARCH CROSS_COMPILE=${CROSS_TOOLCHAIN}- bindeb-pkg
+  fi
   [[ $? -eq 0 ]] || die "make(1) bindeb-pkg failed"
 
-  export BUILT_KV=$(strings vmlinux |grep '^Linux version ' |awk '{print $3}')
+  # FIXME: add code to "main()" which checks as early as possible if required toolchain binaries
+  # are available
+  local strings=strings
+  [[ -n $CROSS_ARCH ]] && strings=${CROSS_TOOLCHAIN}-strings
+
+  export BUILT_KV=$($strings vmlinux 2>/dev/null |grep '^Linux version ' |awk '{print $3}')
+  [[ -z $BUILT_KV ]] \
+    && die "unable to extract version string from built kernel '$(pwd)/vmlinux'"
+
   wrap cd "$TMPDIR"
 
+  # FIXME: unsure why this "mkdir(1)" invokation is here...
   [[ -d $LOG_DIR ]] || wrap mkdir -m 0750 "$LOG_DIR"
 }
 ## }}}
@@ -246,11 +272,18 @@ function usage()
   USAGE=1
   echo "Usage: $SCRIPT_NAME [options] <kernel-version>"
   echo
+  echo "General options:"
+  echo
   echo "  -h, --help        "
   echo "  --kconfig=PATH    "
   echo "  --work-dir=PATH   "
   echo "  --tmpfs           "
   echo "  --keep-work-dir   "
+  echo
+  echo "Cross-compilation options:"
+  echo
+  echo "  --cross-arch=ARCH"
+  echo "  --cross-toolchain=TRIPLE"
   exit 0
 }
 ## }}}
@@ -336,10 +369,12 @@ function do_build()
 ## {{{ function main()
 function main()
 {
-  KCONFIG=        # Kernel .config, defaults to /boot/config-$KV_CUR
-  KEEP_WORK_DIR=0 # Don't delete $WORK_DIR
-  TMPFS=0         # Build kernel in a tmpfs
-  JOBS=           # Argument to pass to make's -j (jobs) option
+  KCONFIG=          # Kernel .config, defaults to /boot/config-$KV_CUR
+  KEEP_WORK_DIR=0   # Don't delete $WORK_DIR
+  TMPFS=0           # Build kernel in a tmpfs
+  JOBS=             # Argument to pass to make's -j (jobs) option
+  CROSS_ARCH=       # Cross-compilation target architecture (e.g. arm64)
+  CROSS_TOOLCHAIN=  # Cross-compilation toolchain (e.g. aarch64-linux-gnu)
 
   while [[ $# -gt 0 ]]
   do
@@ -395,8 +430,46 @@ function main()
         else
           die "invalid option '$arg'"
         fi
+        # FIME: due to the passage of time, one cannot remember why the below "rm -rf" is there
+        # and should be revisited ASAP
         [[ -d $WORK_DIR ]] && rm -rf "$WORK_DIR"
         WORK_DIR="$arg"
+        ;;
+      --cross-arch*)
+        if [[ $arg == --cross-arch ]]
+        then
+          [[ -z $1 ]] && die "option '--cross-arch' requires an argument"
+          arg="$1"
+          shift
+        elif [[ ${arg:0:13} == --cross-arch= ]]
+        then
+         arg="${arg/--cross-arch=/}"
+        else
+          die "invalid option '$arg'"
+        fi
+        case "$arg" in
+          arm64) ;;
+          *)     die "cross-compilation target arch '$arg' is not supported" ;;
+        esac
+        CROSS_ARCH=$arg
+        ;;
+      --cross-toolchain*)
+        if [[ $arg == --cross-toolchain ]]
+        then
+          [[ -z $1 ]] && die "option '--cross-toolchain' requires an argument"
+          arg="$1"
+          shift
+        elif [[ ${arg:0:18} == --cross-toolchain= ]]
+        then
+         arg="${arg/--cross-toolchain=/}"
+        else
+          die "invalid option '$arg'"
+        fi
+        case "$arg" in
+          aarch64-linux-gnu) ;;
+          *)                 die "cross-compilation target arch '$arg' is not supported" ;;
+        esac
+        CROSS_TOOLCHAIN=$arg
         ;;
       --keep-work-dir)
         KEEP_WORK_DIR=1
@@ -408,6 +481,12 @@ function main()
         die "unrecognised option '$arg'"
     esac
   done
+
+  # Option --cross-arch requires --cross-toolchain and vice versa
+  [[ -n $CROSS_ARCH && -z $CROSS_TOOLCHAIN ]] \
+    && die "option '--cross-arch' requires '--cross-toolchain'"
+  [[ -n $CROSS_TOOLCHAIN && -z $CROSS_ARCH ]] \
+    && die "option '--cross-toolchain' requires '--cross-arch'"
 
   [[ $# -eq 1 ]] || usage
   [[ -n $1 ]] || usage
@@ -440,6 +519,8 @@ exec > >(tee -a "$WORK_DIR/build.log") 2>&1
 trap exit_handler INT TERM EXIT
 
 # Ensure $DISTFILE_DIR exists
+# FIXME: variables should be quoted below; this logic should also be combined with that near
+# the beggining of "do_build()"
 if ! [[ -d $DISTFILE_DIR ]]
 then
   mkdir -m 0750 $DISTFILE_DIR || exit 1
