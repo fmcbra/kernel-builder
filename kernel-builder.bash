@@ -231,16 +231,16 @@ function kernel_build()
     JOBS=$ncpu
   fi
 
-  # FIXME: expand this (and other?) code which related to ccache such that we (a) check ccache is
-  # available in PATH and (b) allow the user to specify an alternate location for the ccache
-  # binaries
+  # FIXME: expand this (and other?) code which related to ccache such that we
+  # (a) check ccache is available in PATH and (b) allow the user to specify an
+  # alternate location for the ccache binaries
   export PATH="/usr/lib/ccache:$PATH"
 
   time make -j$JOBS $MAKE_OPTS bindeb-pkg
   [[ $? -eq 0 ]] || die "make(1) bindeb-pkg failed"
 
-  # FIXME: add code to "main()" which checks as early as possible if required toolchain binaries
-  # are available
+  # FIXME: add code to "main()" which checks as early as possible if required
+  # toolchain binaries are available
   local strings=strings
   [[ -n $CROSS_ARCH ]] && strings=${CROSS_TOOLCHAIN}-strings
 
