@@ -14,7 +14,7 @@ fi
 
 # Defaults
 export TMPDIR="${TMPDIR:-/scratch}"
-KORG_URL=https://cdn.kernel.org/pub/linux/kernel/v4.x
+KORG_URL="${KORG_URL:-https://cdn.kernel.org/pub/linux/kernel/v4.x}"
 LOG_DIR="${LOG_DIR:-/var/log/kernel-builder}"
 DISTFILE_DIR="${DISTFILE_DIR:-/var/tmp/distfiles}"
 DEB_DIR="${DEB_DIR:-/var/lib/kernel-builder/debs}"
