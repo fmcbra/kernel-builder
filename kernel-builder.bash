@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script filename
-SCRIPT_NAME="$(basename "$0")"
+SCRIPT_NAME="${0##*/}"
 
 # Set a restrictive umask that clears all permission bits for others
 umask 0007
