@@ -524,8 +524,9 @@ function main()
 
   if [[ $TMPFS -eq 1 ]]
   then
-    [[ -d $WORK_DIR/build/linux ]] || wrap mkdir -m 0750 -p "$WORK_DIR/build/linux"
-    wrap mount -t tmpfs -o size=100% none "$WORK_DIR/build"
+    local bd="$WORK_DIR/build/linux"
+    [[ -d $bd ]] || wrap mkdir -m 0750 -p "$bd"
+    wrap mount -t tmpfs -o size=100% none "$bd"
   fi
 
   # Before doing any of the heavy lifting, change TMPDIR environment variable
