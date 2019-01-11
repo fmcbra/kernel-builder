@@ -212,12 +212,7 @@ function kernel_configure()
   wrap cd "$WORK_DIR/build/linux/linux-$KV"
 
   wrap cp -L "$KCONFIG" .config
-  if [[ -z $CROSS_ARCH ]]
-  then
-    yes '' |make oldconfig >/dev/null 2>&1
-  else
-    yes '' |make ARCH=$CROSS_ARCH CROSS_COMPILE=${CROSS_TOOLCHAIN}- oldconfig >/dev/null 2>&1
-  fi
+  yes '' |make oldconfig $MAKE_OPTS >/dev/null 2>&1
 
   [[ $? -eq 0 ]] || die "make(1) oldconfig failed"
 }
@@ -241,12 +236,7 @@ function kernel_build()
   # binaries
   export PATH="/usr/lib/ccache:$PATH"
 
-  if [[ -z $CROSS_ARCH ]]
-  then
-    time make -j$JOBS bindeb-pkg
-  else
-    time make -j$JOBS ARCH=$CROSS_ARCH CROSS_COMPILE=${CROSS_TOOLCHAIN}- bindeb-pkg
-  fi
+  time make -j$JOBS $MAKE_OPTS bindeb-pkg
   [[ $? -eq 0 ]] || die "make(1) bindeb-pkg failed"
 
   # FIXME: add code to "main()" which checks as early as possible if required toolchain binaries
@@ -394,6 +384,7 @@ function main()
   JOBS=             # Argument to pass to make's -j (jobs) option
   CROSS_ARCH=       # Cross-compilation target architecture (e.g. arm64)
   CROSS_TOOLCHAIN=  # Cross-compilation toolchain (e.g. aarch64-linux-gnu)
+  MAKE_OPTS=        # Options to make along to make(1)
 
   while [[ $# -gt 0 ]]
   do
@@ -506,6 +497,9 @@ function main()
     && die "option '--cross-arch' requires '--cross-toolchain'"
   [[ -n $CROSS_TOOLCHAIN && -z $CROSS_ARCH ]] \
     && die "option '--cross-toolchain' requires '--cross-arch'"
+
+  [[ -n $CROSS_ARCH ]] && \
+    MAKE_OPTS="'ARCH=$CROSS_ARCH' CROSS_COMPILE='${CROSS_TOOLCHAIN}-'"
 
   [[ $# -eq 1 ]] || usage
   [[ -n $1 ]] || usage
