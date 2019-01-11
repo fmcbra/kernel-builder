@@ -2,5 +2,9 @@
     ensure that all those that should be double-quoted are.  These are primarily
     variables which come from kernel-builder.conf (/etc/default/kernel-builder).
 
+02. Document options better.  Currently all/most options are at least visible
+    from "kernel-builder --help" but lack helpful descriptions.
+
+
 --
 vim: ts=2 sw=2 et fdm=marker :
