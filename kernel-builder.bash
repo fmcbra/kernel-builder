@@ -120,6 +120,20 @@ function wrap()
 }
 ## }}}
 
+## {{{ function _gpg_recv_keys()
+function _gpg_recv_keys()
+{
+  # FIXME: remove this hack and make keys which are to be imported part of the
+  # configuration in the new UI
+
+  local key
+  for key in $GPG_RECV_KEYS
+  do
+    wrap gpg2 --keyserver $GPG_KEYSERVER --recv-keys $key
+  done
+}
+## }}}
+
 ## {{{ function tarball_download()
 function tarball_download()
 {
@@ -152,9 +166,7 @@ function tarball_download()
   echo ">> Extracting $tz"
   wrap unxz -d -k "$tz"
 
-  # FIXME: remove this hack and make keys which are to be imported part of the
-  # configuration in the new UI
-  wrap gpg2 --keyserver hkp://pgp.mit.edu --recv-keys 647F28654894E3BD457199BE38DBBDC86092693E
+  [[ -n $GPG_RECV_KEYS ]] && _gpg_recv_keys
 
   echo ">> Verifying gpg2 signature of file $tb"
   wrap gpg2 --verify "$ts" "$tb"
