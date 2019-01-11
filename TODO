@@ -1,0 +1,6 @@
+01. Go through all places where variables are passed to functions/programs and
+    ensure that all those that should be double-quoted are.  These are primarily
+    variables which come from kernel-builder.conf (/etc/default/kernel-builder).
+
+--
+vim: ts=2 sw=2 et fdm=marker :
