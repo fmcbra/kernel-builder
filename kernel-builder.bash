@@ -199,8 +199,10 @@ function tarball_extract()
   done
 
   echo ">> Extracting cached $DISTFILE_DIR/$tz"
-  [[ -d $WORK_DIR/build/linux ]] || wrap mkdir -m 0750 -p "$WORK_DIR/build/linux"
-  wrap tar Jxf "$DISTFILE_DIR/$tz" -C "$WORK_DIR/build/linux"
+
+  local bd="$WORK_DIR/build/linux"
+  [[ -d $bd ]] || wrap mkdir -m 0750 -p "$bd"
+  wrap tar Jxf "$DISTFILE_DIR/$tz" -C "$bd"
 }
 ## }}}
 
