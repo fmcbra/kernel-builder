@@ -360,8 +360,8 @@ function do_build()
 
   echo ">> Installing build dependencies"
   wrap apt-get install -y \
-    bc bison build-essential ccache dirmngr dpkg-dev fakeroot flex gnupg2 ncurses-dev \
-    lib{ssl,elf}-dev pkg-config zlib1g-dev xz-utils
+    bc bison build-essential ccache dirmngr dpkg-dev fakeroot flex gnupg2 \
+    ncurses-dev lib{ssl,elf}-dev pkg-config zlib1g-dev xz-utils
 
   echo ">> Extracting tarball"
   tarball_download
@@ -380,7 +380,8 @@ function do_build()
   echo ">> Archiving .deb's for kernel $KV to $DEB_DIR"
   archive_debs
 
-  # If we don't change directory to somewhere other than the tmpfs, the umount will fail
+  # If we don't change directory to somewhere other than the tmpfs, the umount
+  # will fail
   cd "$TMPDIR"
 
   return 0
@@ -452,8 +453,8 @@ function main()
         else
           die "invalid option '$arg'"
         fi
-        # FIME: due to the passage of time, one cannot remember why the below "rm -rf" is there
-        # and should be revisited ASAP
+        # FIXME: due to the passage of time, one cannot remember why the below
+        # "rm -rf" is there and should be revisited ASAP
         [[ -d $WORK_DIR ]] && rm -rf "$WORK_DIR"
         WORK_DIR="$arg"
         ;;
@@ -471,7 +472,8 @@ function main()
         fi
         case "$arg" in
           arm64) ;;
-          *)     die "cross-compilation target arch '$arg' is not supported" ;;
+          *)
+            die "cross-compilation target arch '$arg' is not supported" ;;
         esac
         CROSS_ARCH=$arg
         ;;
@@ -489,7 +491,8 @@ function main()
         fi
         case "$arg" in
           aarch64-linux-gnu) ;;
-          *)                 die "cross-compilation target arch '$arg' is not supported" ;;
+          *)
+            die "cross-compilation target arch '$arg' is not supported" ;;
         esac
         CROSS_TOOLCHAIN=$arg
         ;;
@@ -544,8 +547,8 @@ exec > >(tee -a "$WORK_DIR/build.log") 2>&1
 trap exit_handler INT TERM EXIT
 
 # Ensure $DISTFILE_DIR exists
-# FIXME: variables should be quoted below; this logic should also be combined with that near
-# the beggining of "do_build()"
+# FIXME: variables should be quoted below; this logic should also be combined
+# with that near the beggining of "do_build()"
 if ! [[ -d $DISTFILE_DIR ]]
 then
   mkdir -m 0750 $DISTFILE_DIR || exit 1
