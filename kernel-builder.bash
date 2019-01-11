@@ -29,6 +29,19 @@ fi
 WORK_DIR="$(mktemp -d -p "$TMPDIR" "$SCRIPT_NAME.XXXXXXXX")"
 [[ $? -eq 0 ]] || exit 1
 
+## {{{ function _exit_handler_tmpfs()
+function _exit_handler_tmpfs()
+{
+  local re="^none on $TMPDIR/kernel-builder.*/build type tmpfs"
+  local m="$(mount 2>&1 |grep -q "^none on $re type tmpfs")"
+  [[ -n $m ]] || return
+
+  local m_tmpfs=$(mount |grep "^none on $re" |awk '{print $3}')
+  echo >&2 "$SCRIPT_NAME: unmounting $m_tmpfs"
+  wrap umount -f $m_tmpfs
+}
+## }}}
+
 ## {{{ function exit_handler()
 function exit_handler()
 {
@@ -37,15 +50,7 @@ function exit_handler()
   [[ $KEEP_WORK_DIR -eq 1 ]] && return
   [[ -d $WORK_DIR ]] || return
 
-  if [[ $TMPFS -eq 1 ]]
-  then
-    if mount 2>/dev/null |grep -q "^none on $TMPDIR/kernel-builder.*/build type tmpfs"
-    then
-      local tmpfs_mount=$(mount |grep "^none on $TMPDIR/kernel-builder.*/build" |awk '{print $3}')
-      echo >&2 "$SCRIPT_NAME: unmounting $tmpfs_mount"
-      wrap umount -f $tmpfs_mount
-    fi
-  fi
+  [[ $TMPFS -eq 1 ]] && _exit_handler_tmpfs
 
   echo >&2 "$SCRIPT_NAME: cleaning up..."
 
