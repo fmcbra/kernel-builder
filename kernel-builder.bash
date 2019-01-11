@@ -218,6 +218,18 @@ function kernel_configure()
 }
 ## }}}
 
+## {{{ function _vmlinux_extract_version()
+function _vmlinux_extract_version()
+{
+  # FIXME: add code to "main()" which checks as early as possible if required
+  # toolchain binaries are available
+  local strings=strings
+  [[ -n $CROSS_ARCH ]] && strings=${CROSS_TOOLCHAIN}-strings
+
+  $strings vmlinux 2>/dev/null |grep '^Linux version ' |awk '{print $3}'
+}
+## }}}
+
 ## {{{ function kernel_build()
 function kernel_build()
 {
@@ -244,7 +256,7 @@ function kernel_build()
   local strings=strings
   [[ -n $CROSS_ARCH ]] && strings=${CROSS_TOOLCHAIN}-strings
 
-  export BUILT_KV=$($strings vmlinux 2>/dev/null |grep '^Linux version ' |awk '{print $3}')
+  export BUILT_KV=$(_vmlinux_extract_version)
   [[ -z $BUILT_KV ]] \
     && die "unable to extract version string from built kernel '$(pwd)/vmlinux'"
 
