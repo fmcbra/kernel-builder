@@ -14,7 +14,7 @@ fi
 
 # Defaults
 export TMPDIR="${TMPDIR:-/scratch}"
-KORG_URL="${KORG_URL:-https://cdn.kernel.org/pub/linux/kernel/v4.x}"
+KORG_URL="${KORG_URL:-https://cdn.kernel.org/pub/linux/kernel}"
 LOG_DIR="${LOG_DIR:-/var/log/kernel-builder}"
 DISTFILE_DIR="${DISTFILE_DIR:-/var/tmp/distfiles}"
 DEB_DIR="${DEB_DIR:-/var/lib/kernel-builder/debs}"
@@ -148,9 +148,11 @@ function tarball_download()
   wrap cd "$WORK_DIR"
 
   local file=
+  local major="${KV%%.*}"
+
   for file in "linux-$KV".tar.{sign,xz}
   do
-    local url="$KORG_URL/$file"
+    local url="$KORG_URL/v$major.x/$file"
     local tmp_file="$(mktemp -p "$WORK_DIR" download.XXXXXX)"
     [[ $? -eq 0 ]] || die "mktemp(1) failed"
 
