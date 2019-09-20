@@ -248,7 +248,9 @@ function kernel_build()
   # FIXME: expand this (and other?) code which related to ccache such that we
   # (a) check ccache is available in PATH and (b) allow the user to specify an
   # alternate location for the ccache binaries
-  export PATH="/usr/lib/ccache:$PATH"
+  PATH="/usr/lib/ccache:$PATH"
+  [[ -n $DISTCC_BIN_DIR ]] && PATH="$DISTCC_BIN_DIR:$PATH"
+  export PATH
 
   time make -j$JOBS $MAKE_OPTS bindeb-pkg
   [[ $? -eq 0 ]] || die "make(1) bindeb-pkg failed"
@@ -302,6 +304,10 @@ function usage()
   echo "  --work-dir=PATH   "
   echo "  --tmpfs           "
   echo "  --keep-work-dir   "
+  echo
+  echo "Compilation-related options:"
+  echo
+  echo "  --distcc-bin-dir=PATH"
   echo
   echo "Cross-compilation options:"
   echo
@@ -400,6 +406,8 @@ function main()
   CROSS_ARCH=       # Cross-compilation target architecture (e.g. arm64)
   CROSS_TOOLCHAIN=  # Cross-compilation toolchain (e.g. aarch64-linux-gnu)
   MAKE_OPTS=        # Options to make along to make(1)
+  DISTCC_BIN_DIR=   # Path where distcc compiler binaries are located
+                    # (/usr/lib/distcc on Debian)
 
   while [[ $# -gt 0 ]]
   do
@@ -460,6 +468,20 @@ function main()
         [[ -d $WORK_DIR ]] && rm -rf "$WORK_DIR"
         WORK_DIR="$arg"
         ;;
+      --distcc-bin-dir*)
+        if [[ $arg == --distcc-bin-dir ]]
+        then
+          [[ -z $1 ]] && die "option '--distcc-bin-dir' requires an argument"
+          arg="$1"
+          shift
+        elif [[ ${arg:0:17} == --distcc-bin-dir= ]]
+        then
+         arg="${arg/--distcc-bin-dir=/}"
+        else
+          die "invalid option '$arg'"
+        fi
+        DISTCC_BIN_DIR="$arg"
+        ;;
       --cross-arch*)
         if [[ $arg == --cross-arch ]]
         then
@@ -508,6 +530,11 @@ function main()
         die "unrecognised option '$arg'"
     esac
   done
+
+  if [[ -n $DISTCC_BIN_DIR ]]
+  then
+    [[ -d $DISTCC_BIN_DIR ]] || die "directory '$DISTCC_BIN_DIR' doesn't exist"
+  fi
 
   # Option --cross-arch requires --cross-toolchain and vice versa
   [[ -n $CROSS_ARCH && -z $CROSS_TOOLCHAIN ]] \
